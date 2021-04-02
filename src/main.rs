@@ -23,8 +23,11 @@ async fn main() -> Result<()> {
     HttpServer::new(|| {
         App::new()
             .wrap(Logger::default())
-            .wrap(HttpAuthentication::basic(libs::auth::basic_auth_validator))
-            .route("/covid19", web::get().to(libs::handler::covid19))
+            .service(
+                web::scope("/app")
+                    .wrap(HttpAuthentication::basic(libs::auth::basic_auth_validator))
+                    .route("/covid19", web::get().to(libs::handler::covid19)),
+            )
             .route("/health", web::get().to(|| HttpResponse::Ok().body("Ok")))
     })
     .bind("127.0.0.1:8080")?
