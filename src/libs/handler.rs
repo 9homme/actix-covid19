@@ -6,7 +6,7 @@ use crate::libs::model::{CovidData, CovidProvince, CovidSummary};
 pub async fn covid19() -> impl Responder {
     match super::api_invoker::get_covid_cases().await {
         Ok(data) => HttpResponse::Ok().json(covid19_summary(data)),
-        Err(e) => HttpResponse::BadRequest().json(e),
+        Err(e) => HttpResponse::BadRequest().body(format!("{:?}", e)),
     }
 }
 
@@ -19,6 +19,11 @@ fn covid19_summary(covid_data: CovidData) -> CovidSummary {
         .map(|(k, v)| CovidProvince {
             province: String::from(k),
             count: v.len() as i32,
+            last_date: v
+                .iter()
+                .map(|c| c.confirm_date)
+                .max()
+                .expect("Get max date from cases"),
         })
         .collect::<Vec<CovidProvince>>();
     CovidSummary {
@@ -28,15 +33,17 @@ fn covid19_summary(covid_data: CovidData) -> CovidSummary {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use crate::libs::model::CovidCase;
+
+    use super::*;
 
     #[test]
     fn test_covid19_summary() {
+        let date = Local::now().naive_local();
         let input = CovidData {
             data: vec![
                 CovidCase {
-                    confirm_date: None,
+                    confirm_date: date,
                     no: None,
                     age: None,
                     gender: None,
@@ -51,7 +58,7 @@ mod test {
                     stat_quarantine: None,
                 },
                 CovidCase {
-                    confirm_date: None,
+                    confirm_date: date,
                     no: None,
                     age: None,
                     gender: None,
@@ -66,7 +73,7 @@ mod test {
                     stat_quarantine: None,
                 },
                 CovidCase {
-                    confirm_date: None,
+                    confirm_date: date,
                     no: None,
                     age: None,
                     gender: None,
@@ -81,7 +88,7 @@ mod test {
                     stat_quarantine: None,
                 },
                 CovidCase {
-                    confirm_date: None,
+                    confirm_date: date,
                     no: None,
                     age: None,
                     gender: None,
@@ -103,14 +110,17 @@ mod test {
                 CovidProvince {
                     province: String::from("bangkok"),
                     count: 2,
+                    last_date: date,
                 },
                 CovidProvince {
                     province: String::from("chiang mai"),
                     count: 1,
+                    last_date: date,
                 },
                 CovidProvince {
                     province: String::from("ไม่ระบุ"),
                     count: 1,
+                    last_date: date,
                 },
             ],
         };
@@ -124,6 +134,10 @@ mod test {
                 .find(|p| p.province == expected_province.province);
             assert_eq!(result_province.is_some(), true);
             assert_eq!(expected_province.count, result_province.unwrap().count);
+            assert_eq!(
+                expected_province.last_date,
+                result_province.unwrap().last_date
+            )
         }
     }
 }

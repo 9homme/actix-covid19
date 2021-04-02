@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -9,6 +10,8 @@ pub struct CovidSummary {
 pub struct CovidProvince {
     pub province: String,
     pub count: i32,
+    #[serde(with = "date_format")]
+    pub last_date: NaiveDateTime,
 }
 
 /*
@@ -28,7 +31,8 @@ pub struct CovidData {
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all(deserialize = "PascalCase", serialize = "PascalCase"))]
 pub struct CovidCase {
-    pub confirm_date: Option<String>,
+    #[serde(with = "date_format")]
+    pub confirm_date: NaiveDateTime,
     pub no: Option<String>,
     pub age: Option<f32>,
     pub gender: Option<String>,
@@ -43,8 +47,25 @@ pub struct CovidCase {
     pub stat_quarantine: Option<i32>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all(deserialize = "PascalCase", serialize = "PascalCase"))]
-pub struct Error {
-    pub message: String,
+mod date_format {
+    use chrono::NaiveDateTime;
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
+
+    pub fn serialize<S>(date: &NaiveDateTime, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = format!("{}", date.format(FORMAT));
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        NaiveDateTime::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
+    }
 }
