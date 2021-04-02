@@ -36,6 +36,8 @@ mod test {
     use crate::libs::model::CovidCase;
 
     use super::*;
+    use chrono::{Duration, Local};
+    use std::ops::Add;
 
     #[test]
     fn test_covid19_summary() {
@@ -73,7 +75,7 @@ mod test {
                     stat_quarantine: None,
                 },
                 CovidCase {
-                    confirm_date: date,
+                    confirm_date: date.add(Duration::days(1)),
                     no: None,
                     age: None,
                     gender: None,
@@ -110,7 +112,7 @@ mod test {
                 CovidProvince {
                     province: String::from("bangkok"),
                     count: 2,
-                    last_date: date,
+                    last_date: date.add(Duration::days(1)),
                 },
                 CovidProvince {
                     province: String::from("chiang mai"),
