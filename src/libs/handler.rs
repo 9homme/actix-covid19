@@ -28,6 +28,7 @@ fn covid19_summary(covid_data: CovidData) -> CovidSummary {
                 .max()
                 .expect("Get max date from cases"),
         })
+        .sorted_by(|a, b| Ord::cmp(&b.count, &a.count))
         .collect::<Vec<CovidProvince>>();
     CovidSummary {
         data: covid_provinces,
