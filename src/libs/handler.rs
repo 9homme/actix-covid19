@@ -1,9 +1,12 @@
 use actix_web::{HttpResponse, Responder};
+use actix_web_httpauth::extractors::basic::BasicAuth;
 use itertools::Itertools;
+use tracing::*;
 
 use crate::libs::model::{CovidData, CovidProvince, CovidSummary};
 
-pub async fn covid19() -> impl Responder {
+pub async fn covid19(auth: BasicAuth) -> impl Responder {
+    debug!("Basic Authentication : {}", auth.user_id());
     match super::api_invoker::get_covid_cases().await {
         Ok(data) => HttpResponse::Ok().json(covid19_summary(data)),
         Err(e) => HttpResponse::BadRequest().body(format!("{:?}", e)),
@@ -33,11 +36,13 @@ fn covid19_summary(covid_data: CovidData) -> CovidSummary {
 
 #[cfg(test)]
 mod test {
+    use std::ops::Add;
+
+    use chrono::{Duration, Local};
+
     use crate::libs::model::CovidCase;
 
     use super::*;
-    use chrono::{Duration, Local};
-    use std::ops::Add;
 
     #[test]
     fn test_covid19_summary() {

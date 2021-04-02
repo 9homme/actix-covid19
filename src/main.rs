@@ -2,6 +2,7 @@ extern crate dotenv;
 
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use color_eyre::Result;
 use dotenv::dotenv;
 use tracing::info;
@@ -22,6 +23,7 @@ async fn main() -> Result<()> {
     HttpServer::new(|| {
         App::new()
             .wrap(Logger::default())
+            .wrap(HttpAuthentication::basic(libs::auth::basic_auth_validator))
             .route("/covid19", web::get().to(libs::handler::covid19))
             .route("/health", web::get().to(|| HttpResponse::Ok().body("Ok")))
     })
