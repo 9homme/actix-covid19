@@ -4,21 +4,13 @@ use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use color_eyre::Result;
-use dotenv::dotenv;
 use tracing::info;
-use tracing_subscriber::EnvFilter;
-
 mod libs;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    dotenv().ok();
-
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .init();
-
-    let db = libs::db::get_db().await.expect("Connecting to mongodb");
+    let config = libs::config::Config::from_env().expect("Getting config from .env file");
+    let db = libs::db::get_db(&config).await.expect("Connecting to mongodb");
     info!("Starting application");
 
     HttpServer::new(move || {
@@ -34,7 +26,7 @@ async fn main() -> Result<()> {
             )
             .route("/health", web::get().to(|| HttpResponse::Ok().body("Ok")))
     })
-    .bind("127.0.0.1:8080")?
+    .bind(format!("{}:{}", config.host, config.port))?
     .run()
     .await?;
 
