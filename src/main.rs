@@ -18,15 +18,19 @@ async fn main() -> Result<()> {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
+    let db = libs::db::get_db().await.expect("Connecting to mongodb");
     info!("Starting application");
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
+            .data(db.clone())
             .wrap(Logger::default())
             .service(
                 web::scope("/app")
                     .wrap(HttpAuthentication::basic(libs::auth::basic_auth_validator))
-                    .route("/covid19", web::get().to(libs::handler::covid19)),
+                    .route("/covid19", web::get().to(libs::handler::covid19))
+                    .route("/hash/{value}", web::get().to(libs::handler::hash))
+                    .route("/user/add", web::post().to(libs::handler::add_user)),
             )
             .route("/health", web::get().to(|| HttpResponse::Ok().body("Ok")))
     })

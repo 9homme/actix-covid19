@@ -1,9 +1,27 @@
-use actix_web::{HttpResponse, Responder};
+use crate::libs::model::{CovidData, CovidProvince, CovidSummary, NewUser};
+use actix_web::{web, HttpResponse, Responder};
 use actix_web_httpauth::extractors::basic::BasicAuth;
+use blake2::{Blake2b, Digest};
 use itertools::Itertools;
+use mongodb::bson::doc;
+use mongodb::Database;
 use tracing::*;
 
-use crate::libs::model::{CovidData, CovidProvince, CovidSummary};
+pub async fn add_user(db: web::Data<Database>, new_user: web::Json<NewUser>) -> impl Responder {
+    let collection = db.collection("user");
+    let hash = Blake2b::digest(new_user.password.as_ref());
+    let doc = doc! {"username": &new_user.username, "password_hash":format!("{:x}", hash)};
+    let result = collection.insert_one(doc, None).await;
+    match result {
+        Ok(data) => HttpResponse::Ok().json(data),
+        Err(e) => HttpResponse::BadRequest().body(format!("{:?}", e)),
+    }
+}
+
+pub async fn hash(web::Path(value): web::Path<String>) -> impl Responder {
+    let hash = Blake2b::digest(value.as_ref());
+    HttpResponse::Ok().body(format!("{:x}", hash))
+}
 
 pub async fn covid19(auth: BasicAuth) -> impl Responder {
     debug!("Basic Authentication : {}", auth.user_id());

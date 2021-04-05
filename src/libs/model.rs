@@ -2,6 +2,12 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
+pub struct NewUser {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
 pub struct CovidSummary {
     pub data: Vec<CovidProvince>,
 }

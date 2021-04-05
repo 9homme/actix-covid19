@@ -21,3 +21,6 @@ tracing = "0.1"
 tracing-futures = "0.2"
 tracing-log = { version = "0.1", features = ["env_logger"] }
 tracing-subscriber = "0.2"
+blake2 = "0.9"
+mongodb = "1.1.1"
+bson = "1.2.0"
