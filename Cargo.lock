@@ -52,6 +52,7 @@ dependencies = [
  "config",
  "dotenv",
  "eyre",
+ "futures-util",
  "itertools",
  "mongodb",
  "openssl",

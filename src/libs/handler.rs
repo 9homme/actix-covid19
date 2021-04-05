@@ -1,17 +1,17 @@
+use std::sync::Arc;
+
 use crate::libs::model::{CovidData, CovidProvince, CovidSummary, NewUser};
 use actix_web::{web, HttpResponse, Responder};
-use actix_web_httpauth::extractors::basic::BasicAuth;
 use blake2::{Blake2b, Digest};
 use itertools::Itertools;
-use mongodb::bson::doc;
-use mongodb::Database;
 use tracing::*;
 
-pub async fn add_user(db: web::Data<Database>, new_user: web::Json<NewUser>) -> impl Responder {
-    let collection = db.collection("user");
-    let hash = Blake2b::digest(new_user.password.as_ref());
-    let doc = doc! {"username": &new_user.username, "password_hash":format!("{:x}", hash)};
-    let result = collection.insert_one(doc, None).await;
+pub async fn add_user(
+    repository: web::Data<Arc<super::repository::Repository>>,
+    new_user: web::Json<NewUser>,
+    _auth: super::auth::AuthenticatedUser,
+) -> impl Responder {
+    let result = repository.add_user(new_user.0).await;
     match result {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(e) => HttpResponse::BadRequest().body(format!("{:?}", e)),
@@ -23,8 +23,8 @@ pub async fn hash(web::Path(value): web::Path<String>) -> impl Responder {
     HttpResponse::Ok().body(format!("{:x}", hash))
 }
 
-pub async fn covid19(auth: BasicAuth) -> impl Responder {
-    debug!("Basic Authentication : {}", auth.user_id());
+pub async fn covid19(auth: super::auth::AuthenticatedUser) -> impl Responder {
+    debug!("Basic Authentication : {}", auth.user.username);
     match super::api_invoker::get_covid_cases().await {
         Ok(data) => HttpResponse::Ok().json(covid19_summary(data)),
         Err(e) => HttpResponse::BadRequest().body(format!("{:?}", e)),

@@ -2,6 +2,27 @@
 
 Just a sample project to learn Rust lang.
 
-`/health` is public path and will return Ok
+# Public path
 
-`/app/covid19` is protected path will need basic authentication header with username: user, password: user123 to access data
+`GET` `/health` is public path and will return Ok
+
+
+# Protected path 
+```
+will need basic authentication header with default (username: user, password: user123)
+to access data
+```
+
+`GET` `/app/covid19` get covid19 cases statistic and then group the data by province
+
+`GET` `/app/hash/{value_to_be_hashed}` will return hashed value from url param
+
+`PUSH` `/app/user` to add new user
+
+Payload
+```
+{
+    "username":"username_to_be_added",
+    "password":"password"
+}
+```

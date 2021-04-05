@@ -1,32 +1,50 @@
-use actix_web::dev::ServiceRequest;
-use actix_web::Error;
-use actix_web_httpauth::extractors::basic::{BasicAuth, Config};
-use actix_web_httpauth::extractors::AuthenticationError;
-use color_eyre::Result;
+use std::{borrow::Cow, future::Future, pin::Pin, sync::Arc};
 
-pub async fn basic_auth_validator(
-    req: ServiceRequest,
-    credentials: BasicAuth,
-) -> Result<ServiceRequest, Error> {
-    let config = req
-        .app_data::<Config>()
-        .map(|data| data.clone())
-        .unwrap_or_else(Default::default);
-    match validate_credentials(
-        credentials.user_id(),
-        credentials.password().unwrap().trim(),
-    ) {
-        Ok(_) => Ok(req),
-        Err(_) => Err(AuthenticationError::from(config).into()),
-    }
+use super::{model::User, repository::Repository};
+use actix_web::Error;
+use actix_web::{
+    error::{ErrorBadRequest, ErrorUnauthorized},
+    web::Data,
+    FromRequest,
+};
+use actix_web_httpauth::extractors::basic::BasicAuth;
+use blake2::{Blake2b, Digest};
+use futures_util::future::ready;
+
+#[derive(Debug)]
+pub struct AuthenticatedUser {
+    pub user: User,
 }
 
-fn validate_credentials(user_id: &str, user_password: &str) -> Result<(), std::io::Error> {
-    if user_id.eq("user") && user_password.eq("user123") {
-        return Ok(());
+impl FromRequest for AuthenticatedUser {
+    type Error = Error;
+    type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
+    type Config = ();
+
+    fn from_request(
+        req: &actix_web::HttpRequest,
+        payload: &mut actix_web::dev::Payload,
+    ) -> Self::Future {
+        let auth = BasicAuth::from_request(req, payload).into_inner();
+        let repository = Data::<Arc<Repository>>::from_request(req, payload).into_inner();
+
+        match (auth, repository) {
+            (Ok(basic_auth), Ok(repository)) => {
+                let hash =
+                    Blake2b::digest(basic_auth.password().unwrap_or(&Cow::from("")).as_bytes());
+                let hashed_password_str = format!("{:x}", hash);
+                let future = async move {
+                    let user = repository.get_user(&basic_auth.user_id().to_string()).await;
+                    match user {
+                        Ok(Some(u)) if u.password_hash == hashed_password_str => {
+                            Ok(AuthenticatedUser { user: u })
+                        }
+                        _ => Err(ErrorUnauthorized("Sorry, No luck!")),
+                    }
+                };
+                Box::pin(future)
+            }
+            _ => Box::pin(ready(Err(ErrorBadRequest("Sorry, No luck!")))),
+        }
     }
-    return Err(std::io::Error::new(
-        std::io::ErrorKind::Other,
-        "Authentication failed!",
-    ));
 }
