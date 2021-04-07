@@ -10,6 +10,7 @@ use chrono::{Duration, Local};
 use color_eyre::Result;
 use mockall::*;
 use mongodb::results::InsertOneResult;
+use web::Buf;
 use std::{ops::Add, sync::Arc};
 
 #[actix_rt::test]
@@ -167,4 +168,53 @@ async fn test_covid19_get() {
             result_province.unwrap().last_date.date()
         )
     }
+}
+
+#[actix_rt::test]
+async fn test_covid19_get_unauthorized() {
+    mock! {
+        DB {}
+        #[async_trait]
+        impl Repository for DB{
+            async fn add_user(&self, new_user: NewUser) -> Result<InsertOneResult>;
+            async fn get_user(&self, username: &String) -> Result<Option<User>>;
+        }
+    }
+
+    mock! {
+        API {}
+        #[async_trait]
+        impl ApiInvoker for API{
+            async fn get_covid_cases(&self) -> reqwest::Result<CovidData>;
+        }
+    }
+    let mock_api = MockAPI::new();
+    let mut mock_db = MockDB::new();
+    mock_db.expect_get_user().returning(|_| Ok(Some(User{
+        id: None,
+        username: "orm".to_string(),
+        password_hash: "f89a0c696a6553a9cedd5e32fe65bcfb17bf083c914dcc5a36e629248c469927a292e120bdd87a8cd79533ec1184958e45f0d2fcd33a70eb0b7fbaec719abfca".to_string()
+    })));
+
+    let arc_db: Arc<dyn Repository + Send + Sync> = Arc::new(mock_db);
+    let arc_api: Arc<dyn ApiInvoker + Send + Sync> = Arc::new(mock_api);
+
+    let mut app = test::init_service(
+        App::new()
+            .data(arc_api.clone())
+            .data(arc_db.clone())
+            .service(web::scope("/app").route("/covid19", web::get().to(covid19))),
+    )
+    .await;
+
+    let req = test::TestRequest::get()
+        .uri("/app/covid19")
+        // set header with incorrect authorization token.
+        .header("Authorization", "Basic b3JtOm9ybTEyaaa==")
+        .to_request();
+
+    let resp = test::read_response(&mut app, req).await;
+    let bytes = resp.bytes();
+    assert_eq!(bytes, b"Sorry, No luck!");
+    
 }
