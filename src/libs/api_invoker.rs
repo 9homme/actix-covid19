@@ -3,7 +3,7 @@ use reqwest::Result;
 use async_trait::async_trait;
 
 #[async_trait]
-pub trait ApiInvoker {
+pub trait ApiInvoker: Send + Sync {
     async fn get_covid_cases(&self) -> Result<CovidData>;
 }
 pub struct ApiInvokerImpl();

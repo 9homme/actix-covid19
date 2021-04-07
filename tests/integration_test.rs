@@ -115,8 +115,8 @@ async fn test_covid19_get() {
         password_hash: "f89a0c696a6553a9cedd5e32fe65bcfb17bf083c914dcc5a36e629248c469927a292e120bdd87a8cd79533ec1184958e45f0d2fcd33a70eb0b7fbaec719abfca".to_string()
     })));
 
-    let arc_db: Arc<dyn Repository + Send + Sync> = Arc::new(mock_db);
-    let arc_api: Arc<dyn ApiInvoker + Send + Sync> = Arc::new(mock_api);
+    let arc_db: Arc<dyn Repository> = Arc::new(mock_db);
+    let arc_api: Arc<dyn ApiInvoker> = Arc::new(mock_api);
 
     let mut app = test::init_service(
         App::new()
@@ -179,8 +179,8 @@ async fn test_covid19_get_unauthorized() {
         password_hash: "f89a0c696a6553a9cedd5e32fe65bcfb17bf083c914dcc5a36e629248c469927a292e120bdd87a8cd79533ec1184958e45f0d2fcd33a70eb0b7fbaec719abfca".to_string()
     })));
 
-    let arc_db: Arc<dyn Repository + Send + Sync> = Arc::new(mock_db);
-    let arc_api: Arc<dyn ApiInvoker + Send + Sync> = Arc::new(mock_api);
+    let arc_db: Arc<dyn Repository> = Arc::new(mock_db);
+    let arc_api: Arc<dyn ApiInvoker> = Arc::new(mock_api);
 
     let mut app = test::init_service(
         App::new()

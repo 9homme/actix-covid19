@@ -26,7 +26,7 @@ impl FromRequest for AuthenticatedUser {
         payload: &mut actix_web::dev::Payload,
     ) -> Self::Future {
         let auth = BasicAuth::from_request(req, payload).into_inner();
-        let repository = Data::<Arc<dyn Repository + Send + Sync>>::from_request(req, payload).into_inner();
+        let repository = Data::<Arc<dyn Repository>>::from_request(req, payload).into_inner();
 
         match (auth, repository) {
             (Ok(basic_auth), Ok(repository)) => {

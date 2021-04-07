@@ -12,7 +12,7 @@ pub async fn health() -> impl Responder {
 }
 
 pub async fn add_user(
-    repository: web::Data<Arc<dyn Repository + Send + Sync>>,
+    repository: web::Data<Arc<dyn Repository>>,
     new_user: web::Json<NewUser>,
     _auth: super::auth::AuthenticatedUser,
 ) -> impl Responder {
@@ -29,7 +29,7 @@ pub async fn hash(web::Path(value): web::Path<String>) -> impl Responder {
 }
 
 pub async fn covid19(
-    api_invoker: web::Data<Arc<dyn ApiInvoker + Send + Sync>>,
+    api_invoker: web::Data<Arc<dyn ApiInvoker>>,
     auth: super::auth::AuthenticatedUser,
 ) -> impl Responder {
     debug!("Basic Authentication : {}", auth.user.username);
