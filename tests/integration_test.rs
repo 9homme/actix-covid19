@@ -13,6 +13,23 @@ use mongodb::results::InsertOneResult;
 use web::Buf;
 use std::{ops::Add, sync::Arc};
 
+mock! {
+    DB {}
+    #[async_trait]
+    impl Repository for DB{
+        async fn add_user(&self, new_user: NewUser) -> Result<InsertOneResult>;
+        async fn get_user(&self, username: &String) -> Result<Option<User>>;
+    }
+}
+
+mock! {
+    API {}
+    #[async_trait]
+    impl ApiInvoker for API{
+        async fn get_covid_cases(&self) -> reqwest::Result<CovidData>;
+    }
+}
+
 #[actix_rt::test]
 async fn test_health_get() {
     let mut app = test::init_service(App::new().route("/health", web::get().to(health))).await;
@@ -24,24 +41,6 @@ async fn test_health_get() {
 #[actix_rt::test]
 async fn test_covid19_get() {
     let date = Local::now().naive_local();
-
-    mock! {
-        DB {}
-        #[async_trait]
-        impl Repository for DB{
-            async fn add_user(&self, new_user: NewUser) -> Result<InsertOneResult>;
-            async fn get_user(&self, username: &String) -> Result<Option<User>>;
-        }
-    }
-
-    mock! {
-        API {}
-        #[async_trait]
-        impl ApiInvoker for API{
-            async fn get_covid_cases(&self) -> reqwest::Result<CovidData>;
-        }
-    }
-
     let mut mock_api = MockAPI::new();
     mock_api.expect_get_covid_cases().returning(move || {
         Ok(CovidData {
@@ -172,22 +171,6 @@ async fn test_covid19_get() {
 
 #[actix_rt::test]
 async fn test_covid19_get_unauthorized() {
-    mock! {
-        DB {}
-        #[async_trait]
-        impl Repository for DB{
-            async fn add_user(&self, new_user: NewUser) -> Result<InsertOneResult>;
-            async fn get_user(&self, username: &String) -> Result<Option<User>>;
-        }
-    }
-
-    mock! {
-        API {}
-        #[async_trait]
-        impl ApiInvoker for API{
-            async fn get_covid_cases(&self) -> reqwest::Result<CovidData>;
-        }
-    }
     let mock_api = MockAPI::new();
     let mut mock_db = MockDB::new();
     mock_db.expect_get_user().returning(|_| Ok(Some(User{
