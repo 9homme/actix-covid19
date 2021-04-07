@@ -1,16 +1,27 @@
 use crate::libs::model::CovidData;
-use actix_web::client::Client;
-use color_eyre::Result;
-use eyre::Report;
+use reqwest::Result;
+use async_trait::async_trait;
 
-pub async fn get_covid_cases() -> Result<CovidData> {
-    let response = Client::default()
-        .get("https://covid19.th-stat.com/api/open/cases")
-        .send()
-        .await
-        .map_err(|e| Report::msg(format!("{:?}", e)))?
-        .json::<CovidData>()
-        .limit(65535 * 128)
-        .await?;
-    Ok(response)
+#[async_trait]
+pub trait ApiInvoker {
+    async fn get_covid_cases(&self) -> Result<CovidData>;
 }
+pub struct ApiInvokerImpl();
+
+
+impl ApiInvokerImpl {
+    pub fn new() -> Self {
+        ApiInvokerImpl()
+    }
+}
+
+#[async_trait]
+impl ApiInvoker for ApiInvokerImpl {
+    async fn get_covid_cases(&self) -> Result<CovidData> {
+        reqwest::get("https://covid19.th-stat.com/api/open/cases")
+        .await?
+        .json::<CovidData>().await
+    }
+}
+
+

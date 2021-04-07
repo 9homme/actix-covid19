@@ -1,13 +1,18 @@
-use std::sync::Arc;
-
+use super::api_invoker::ApiInvoker;
+use super::repository::Repository;
 use crate::libs::model::{CovidData, CovidProvince, CovidSummary, NewUser};
 use actix_web::{web, HttpResponse, Responder};
 use blake2::{Blake2b, Digest};
 use itertools::Itertools;
+use std::sync::Arc;
 use tracing::*;
 
+pub async fn health() -> impl Responder {
+    HttpResponse::Ok().body("Ok")
+}
+
 pub async fn add_user(
-    repository: web::Data<Arc<super::repository::Repository>>,
+    repository: web::Data<Arc<dyn Repository + Send + Sync>>,
     new_user: web::Json<NewUser>,
     _auth: super::auth::AuthenticatedUser,
 ) -> impl Responder {
@@ -23,9 +28,12 @@ pub async fn hash(web::Path(value): web::Path<String>) -> impl Responder {
     HttpResponse::Ok().body(format!("{:x}", hash))
 }
 
-pub async fn covid19(auth: super::auth::AuthenticatedUser) -> impl Responder {
+pub async fn covid19(
+    api_invoker: web::Data<Arc<dyn ApiInvoker + Send + Sync>>,
+    auth: super::auth::AuthenticatedUser,
+) -> impl Responder {
     debug!("Basic Authentication : {}", auth.user.username);
-    match super::api_invoker::get_covid_cases().await {
+    match api_invoker.get_covid_cases().await {
         Ok(data) => HttpResponse::Ok().json(covid19_summary(data)),
         Err(e) => HttpResponse::BadRequest().body(format!("{:?}", e)),
     }
@@ -161,8 +169,8 @@ mod test {
             assert_eq!(result_province.is_some(), true);
             assert_eq!(expected_province.count, result_province.unwrap().count);
             assert_eq!(
-                expected_province.last_date,
-                result_province.unwrap().last_date
+                expected_province.last_date.date(),
+                result_province.unwrap().last_date.date()
             )
         }
     }

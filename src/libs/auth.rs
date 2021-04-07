@@ -1,6 +1,5 @@
-use std::{borrow::Cow, future::Future, pin::Pin, sync::Arc};
-
-use super::{model::User, repository::Repository};
+use super::model::User;
+use super::repository::Repository;
 use actix_web::Error;
 use actix_web::{
     error::{ErrorBadRequest, ErrorUnauthorized},
@@ -10,6 +9,7 @@ use actix_web::{
 use actix_web_httpauth::extractors::basic::BasicAuth;
 use blake2::{Blake2b, Digest};
 use futures_util::future::ready;
+use std::{borrow::Cow, future::Future, pin::Pin, sync::Arc};
 
 #[derive(Debug)]
 pub struct AuthenticatedUser {
@@ -26,7 +26,7 @@ impl FromRequest for AuthenticatedUser {
         payload: &mut actix_web::dev::Payload,
     ) -> Self::Future {
         let auth = BasicAuth::from_request(req, payload).into_inner();
-        let repository = Data::<Arc<Repository>>::from_request(req, payload).into_inner();
+        let repository = Data::<Arc<dyn Repository + Send + Sync>>::from_request(req, payload).into_inner();
 
         match (auth, repository) {
             (Ok(basic_auth), Ok(repository)) => {
@@ -46,5 +46,6 @@ impl FromRequest for AuthenticatedUser {
             }
             _ => Box::pin(ready(Err(ErrorBadRequest("Sorry, No luck!")))),
         }
+        
     }
 }
