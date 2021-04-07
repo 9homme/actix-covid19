@@ -2,6 +2,17 @@
 
 Just a sample project to learn Rust lang.
 
+# Start http server
+```
+cargo run
+```
+
+
+# Unit test & Integration test 
+```
+cargo test
+```
+
 # Public path
 
 `GET` `/health` is public path and will return Ok
