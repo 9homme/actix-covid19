@@ -14,8 +14,8 @@ async fn main() -> Result<()> {
     let db = libs::db::get_db(&config)
         .await
         .expect("Connecting to mongodb");
-    let repository: Arc<dyn Repository + Send + Sync> = Arc::new(RepositoryImpl::new(db));
-    let api_invoker: Arc<dyn ApiInvoker + Send + Sync> = Arc::new(ApiInvokerImpl::new());
+    let repository: Arc<dyn Repository> = Arc::new(RepositoryImpl::new(db));
+    let api_invoker: Arc<dyn ApiInvoker> = Arc::new(ApiInvokerImpl::new());
     info!("Starting application");
 
     HttpServer::new(move || {

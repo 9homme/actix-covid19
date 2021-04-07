@@ -9,7 +9,7 @@ use mongodb::{results::InsertOneResult, Database};
 use super::model::User;
 
 #[async_trait]
-pub trait Repository {
+pub trait Repository: Send + Sync {
     async fn add_user(&self, new_user: NewUser) -> Result<InsertOneResult>;
     async fn get_user(&self, username: &String) -> Result<Option<User>>;
 }
