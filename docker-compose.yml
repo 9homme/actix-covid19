@@ -8,11 +8,11 @@ services:
             MONGO_INITDB_ROOT_PASSWORD: admin123
             MONGO_INITDB_DATABASE: covid19
         ports:
-            - 27017:27017
+            - 27018:27017
         volumes:
             - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     actix-covid19:
-        image: actix-covid19
+        image: ghcr.io/9homme/actix-covid19
         depends_on:
             - mongodb
         links:
