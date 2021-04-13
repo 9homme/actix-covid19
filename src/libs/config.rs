@@ -1,4 +1,4 @@
-use serde::{Deserialize};
+use serde::Deserialize;
 use tracing::info;
 use color_eyre::Result;
 use dotenv::dotenv;
@@ -12,6 +12,8 @@ pub struct Config {
     pub mongo_host: String,
     pub mongo_port: i32,
     pub mongo_db: String,
+    pub mongo_username: Option<String>,
+    pub mongo_password: Option<String>
 }
 
 impl Config {

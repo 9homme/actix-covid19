@@ -39,7 +39,8 @@ impl FromRequest for AuthenticatedUser {
                         Ok(Some(u)) if u.password_hash == hashed_password_str => {
                             Ok(AuthenticatedUser { user: u })
                         }
-                        _ => Err(ErrorUnauthorized("Sorry, No luck!")),
+                        Err(e) => Err(ErrorUnauthorized(format!("Sorry, No luck! [Error:{:?}]", e))),
+                        _ => Err(ErrorUnauthorized("Sorry, No luck!"))
                     }
                 };
                 Box::pin(future)

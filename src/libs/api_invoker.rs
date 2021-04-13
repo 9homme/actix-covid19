@@ -18,7 +18,12 @@ impl ApiInvokerImpl {
 #[async_trait]
 impl ApiInvoker for ApiInvokerImpl {
     async fn get_covid_cases(&self) -> Result<CovidData> {
-        reqwest::get("https://covid19.th-stat.com/api/open/cases")
+        reqwest::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .unwrap()
+        .get("https://covid19.th-stat.com/api/open/cases")
+        .send()
         .await?
         .json::<CovidData>().await
     }

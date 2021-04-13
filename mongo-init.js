@@ -1,0 +1,1 @@
+db.user.insert({ username: 'user', password_hash: '2dff86d9d96e4422da72b62a9966961a3c55d185a6f955589f1aacc59cdd198ef1ffea84c1e6033af39299151a12bb825ff3eb3780fd73c15b6d68d412f852d9' });
