@@ -7,16 +7,12 @@ env:
   IMAGE_NAME: actix-covid19
 
 jobs:
-  build:
+  publish:
 
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
     - name: Build image
       run: docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
     - name: Log into registry
